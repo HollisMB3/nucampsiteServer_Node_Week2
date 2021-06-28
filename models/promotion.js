@@ -1,7 +1,14 @@
-// Task 2: Create a Schema and Model for Promotions
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
+// ////////////////// edit 4. Added Currency https://learn.nucamp.co/mod/book/view.php?id=3590&chapterid=4069
+require('mongoose-currency').loadType(mongoose);
+const Currency = mongoose.Types.Currency;
+/* 
 
-// Model module: In the nucampsiteServer/models folder, create a new file named promotion.js.
-// Schema: In this file, create a new Mongoose Schema named promotionSchema. Use this sample promotion document given below as your guide:
+Task 2: Create a Schema and Model for Promotions
+
+Model module: In the nucampsiteServer/models folder, create a new file named promotion.js.
+Schema: In this file, create a new Mongoose Schema named promotionSchema. Use this sample promotion document given below as your guide:
 {
     "name": "Mountain Adventure",
     "image": "images/breadcrumb-trail.jpg",
@@ -9,23 +16,73 @@
     "cost": 1299,
     "description": "Book a 5-day mountain trek with a seasoned outdoor guide! Fly fishing equipment and lessons provided."
 }
-// Schema Fields: All fields should be required except for "featured", and the name should be unique. 
-// Timestamps: Ensure that each document created from this Schema will automatically be given CreatedAt and UpdatedAt fields.
-// Cost: Use the mongoose-currency library's Currency type for the cost field.
-// Model: Create a Model named Promotion from this Schema. 
-// Export: Export the Promotion Model from this module. 
-/* 
-Task 3: Update the routers
-Updates: For both the partnerRouter and promotionRouter, update the response to each defined endpoint using the new Partner and Promotion Models, exactly as you did with the campsiteRouter in the final two exercises this week. 
+Schema Fields: All fields should be required except for "featured", and the name should be unique. 
+Timestamps: Ensure that each document created from this Schema will automatically be given CreatedAt and UpdatedAt fields.
+Cost: Use the mongoose-currency library's Currency type for the cost field.
+Model: Create a Model named Promotion from this Schema. 
 
 
-Test: Use Postman to test each of your updated endpoints and verify that you receive the expected responses. Don't forget your MongoDB server must be running. 
-Test GET/POST/PUT/DELETE requests to: /partners and /partners/:partnerId
-For the POST request to /partners, make sure to send a JSON string in the body of the request. Use the sample partner document given in Task 1. 
-For the PUT request to /partners/:partnerId, make sure to send the same document, but with at least one field changed so that you can verify an update has been made. 
-Repeat the same steps for testing /promotions and /promotions/:promotionId endpoints, using the sample promotion document given in Task 2.
+*/
 
+const promotionSchema = new Schema({
+    name: { // name: image: featured: cost: description: timestamps
+        type: String,
+        required: true,
+        unique: true
+    },
+    image: {
+        type: String,
+        required: true
+    },
+    featured: {
+        type: Boolean,
+        required: false,
+        default: true
+    },
+     cost: {
+        type: Currency,
+        required: true,
+        min: 1299
+    },
+    description: {
+        type: String,
+        required: true
+    }
+},
+  { timestamps: true }
+);
+const Promotion = mongoose.model('Promotion', promotionSchema);
+module.exports = Promotion;
 
-Submission
-Submit a zip file of your entire nucampsiteServer folder with your updated files, excluding the node_modules folder, or submit a text file that contains the link to a public online Git repository for your project. 
- */
+/*
+const promotionSchema = new Schema({
+    name: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    image: {
+        type: String,
+        required: true
+    },
+    featured: {
+        type: Boolean,
+        default: false
+    },
+    cost: {
+        type: Currency,
+        required: true,
+        min: 0
+    },
+    description: {
+        type: String,
+        required: true
+    },
+    
+     {timestamps: true}
+);
+const Promotion = mongoose.model('Promotion', promotionSchema);
+module.exports = Promotion;
+
+*/
+

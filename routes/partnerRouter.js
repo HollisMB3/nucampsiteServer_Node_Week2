@@ -1,84 +1,229 @@
-/* Task 3: Add an Express router to handle routing for partners
-Create a new router in a separate module to handle the endpoints for partners:
-
-Create partnerRouter: 
-
-DONE: In the node-express/routes folder, create a Node module named partnerRouter.js 
-that will implement the Express router for the following paths:
-
-DONE: copied code from partnerRouter // changed all instances of word partner with partner 
-/partners
-/partners/:partnerId 
-
-Endpoints: Write a route() method on the router for each of the paths above, just as you did with the partnerRouter, 
-chaining the .all(). .get(), .post(), .put(), and .delete() routing methods. Handle the responses in the same way as you did for the partnerRouter.
-
-Update server.js: Integrate the Node module you created above within your Express application code in server.js, 
-in the same way as you did with the partnerRouter.
-
-Test: Use Postman to test each of your newly created endpoints and verify that you receive the expected responses. 
-Test GET/POST/PUT/DELETE requests to: localhost:3000/partners and localhost:3000/partners/1
-
-// need to go back to the exercizes 
-For the POST request to localhost:3000/partners, make sure to send a JSON string in the 
-body of the request with a name and description, the same way you did in the exercises. 
-For the PUT request to localhost:3000/partners/1, make sure to send a JSON string in the body of the request as you did for the POST request described above.
-*/
-
-
+// code handles REST API endpoints for /partners and partners/partnerId. 
 const express = require('express');
+const Partner = require('../models/partner');
+
+// create new express router. 
+// Give object name partnerRouter used with express routing methods 
 const partnerRouter = express.Router();
 
-
+// single statement routing 
+// handles endpoints routing to partners 
+// 4. Express router Update EDit via https://learn.nucamp.co/mod/book/view.php?id=3590&chapterid=4069
 partnerRouter.route('/')
-.all((req, res, next) => { 
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'text/plain');
-
-    next();
+.get((req, res, next) => {
+    Partner.find()
+    .then(partners => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(partners);
+    })
+    .catch(err => next(err));
 })
-.get((req, res) => {
-    res.end('Will send all the partners to you');
-})
-.post((req, res) => {
-    res.end(`Will add the partner: ${req.body.name} with description: ${req.body.description}`);
+.post((req, res, next) => {
+    Partner.create(req.body)
+    .then(partner => {
+        console.log('Partner Created ', partner);
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(partner);
+    })
+    .catch(err => next(err));
 })
 .put((req, res) => {
-    res.statusCode = 403; 
+    res.statusCode = 403;
     res.end('PUT operation not supported on /partners');
 })
-.delete((req, res) => {
-    res.end('Deleting all partners');
+.delete((req, res, next) => {
+    Partner.deleteMany()
+    .then(response => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(response);
+    })
+    .catch(err => next(err));
 });
 
-// Assignment part 3 addition 
+///////////////////////////////////////////////////////////////////////////////
 
-partnerRouter.route('/:partnerId')  
-
-.all((req, res, next) => { 
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'text/plain');
-
-    next();
+partnerRouter.route('/:partnerId')
+.get((req, res, next) => {
+    Partner.findById(req.params.partnerId)
+    .then(partner => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(partner);
+    })
+    .catch(err => next(err));
 })
-
-.get((req, res) => {
-    res.end(`Will send details of the partner: ${req.params.partnerId} to you`);
-})
-
 .post((req, res) => {
     res.statusCode = 403;
     res.end(`POST operation not supported on /partners/${req.params.partnerId}`);
 })
+.put((req, res, next) => {
+    Partner.findByIdAndUpdate(req.params.partnerId, {
+        $set: req.body
+    }, { new: true })
+    .then(partner => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(partner);
+    })
+    .catch(err => next(err));
+})
+.delete((req, res, next) => {
+    Partner.findByIdAndDelete(req.params.partnerId)
+    .then(response => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(response);
+    })
+    .catch(err => next(err));
+});
 
+module.exports = partnerRouter; // exports router npm start
+
+////////////////////////////////////////////////////////////////////////
+// comments removed as there isn't a comments object in partner model
+// SUBDOCUMENT ::::: 
+/*
+partnerRouter.route('/:partnerId/comments')
+.get((req, res, next) => {
+    Partner.findById(req.params.partnerId)
+    .then(partner => {
+        if (partner) {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.json(partner.comments);
+        } else {
+            err = new Error(`Partner ${req.params.partnerId} not found`);
+            err.status = 404;
+            return next(err);
+        }
+    })
+    .catch(err => next(err));
+})
+.post((req, res, next) => {
+    Partner.findById(req.params.partnerId)
+    .then(partner => {
+        if (partner) {
+            partner.comments.push(req.body);
+            partner.save()
+            .then(partner => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(partner);
+            })
+            .catch(err => next(err));
+        } else {
+            err = new Error(`Partner ${req.params.partnerId} not found`);
+            err.status = 404;
+            return next(err);
+        }
+    })
+    .catch(err => next(err));
+})
 .put((req, res) => {
-    res.write(`Updating the partner: ${req.params.partnerId}\n`);
-    res.end(`Will update the partner: ${req.body.name}
-      with description: ${req.body.description}`);
+    res.statusCode = 403;
+    res.end(`PUT operation not supported on /partners/${req.params.partnerId}/comments`);
 })
+.delete((req, res, next) => {
+    Partner.findById(req.params.partnerId)
+    .then(partner => {
+        if (partner) {
+            for (let i = (partner.comments.length-1); i >= 0; i--) {
+                partner.comments.id(partner.comments[i]._id).remove();
+            }
+            partner.save()
+            .then(partner => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(partner);
+            })
+            .catch(err => next(err));
+        } else {
+            err = new Error(`Partner ${req.params.partnerId} not found`);
+            err.status = 404;
+            return next(err);
+        }
+    })
+    .catch(err => next(err));
+});
 
-.delete((req, res) => {
-    res.end(`Deleting partner: ${req.params.partnerId}`);
+partnerRouter.route('/:partnerId/comments/:commentId')
+.get((req, res, next) => {
+    Partner.findById(req.params.partnerId)
+    .then(partner => {
+        if (partner && partner.comments.id(req.params.commentId)) {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.json(partner.comments.id(req.params.commentId));
+        } else if (!partner) {
+            err = new Error(`Partner ${req.params.partnerId} not found`);
+            err.status = 404;
+            return next(err);
+        } else {
+            err = new Error(`Comment ${req.params.commentId} not found`);
+            err.status = 404;
+            return next(err);
+        }
+    })
+    .catch(err => next(err));
 })
-// task 2 and task 3 are the same as task 1 import and export of things are correct 
-module.exports = partnerRouter; 
+.post((req, res) => {
+    res.statusCode = 403;
+    res.end(`POST operation not supported on /partners/${req.params.partnerId}/comments/${req.params.commentId}`);
+})
+.put((req, res, next) => {
+    Partner.findById(req.params.partnerId)
+    .then(partner => {
+        if (partner && partner.comments.id(req.params.commentId)) {
+            if (req.body.rating) {
+                partner.comments.id(req.params.commentId).rating = req.body.rating;
+            }
+            if (req.body.text) {
+                partner.comments.id(req.params.commentId).text = req.body.text;
+            }
+            partner.save()
+            .then(partner => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(partner);
+            })
+            .catch(err => next(err));
+        } else if (!partner) {
+            err = new Error(`Partner ${req.params.partnerId} not found`);
+            err.status = 404;
+            return next(err);
+        } else {
+            err = new Error(`Comment ${req.params.commentId} not found`);
+            err.status = 404;
+            return next(err);
+        }
+    })
+    .catch(err => next(err));
+})
+.delete((req, res, next) => {
+    Partner.findById(req.params.partnerId)
+    .then(partner => {
+        if (partner && partner.comments.id(req.params.commentId)) {
+            partner.comments.id(req.params.commentId).remove();
+            partner.save()
+            .then(partner => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(partner);
+            })
+            .catch(err => next(err));
+        } else if (!partner) {
+            err = new Error(`Partner ${req.params.partnerId} not found`);
+            err.status = 404;
+            return next(err);
+        } else {
+            err = new Error(`Comment ${req.params.commentId} not found`);
+            err.status = 404;
+            return next(err);
+        }
+    })
+    .catch(err => next(err));
+});
+*/
